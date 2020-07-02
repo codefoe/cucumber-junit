@@ -1,0 +1,66 @@
+package steps;
+
+import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.core.Filter;
+import org.apache.logging.log4j.core.config.builder.api.*;
+import org.apache.logging.log4j.core.config.builder.impl.BuiltConfiguration;
+
+import java.io.IOException;
+
+public class RunnerMain {
+    public static void main(String args[]) {
+        ConfigurationBuilder<BuiltConfiguration> builder
+                = ConfigurationBuilderFactory.newConfigurationBuilder();
+        AppenderComponentBuilder console
+                = builder.newAppender("stdout", "Console");
+
+        builder.add(console);
+
+        AppenderComponentBuilder file
+                = builder.newAppender("log", "File");
+        file.addAttribute("fileName", "target/logging.log");
+
+        builder.add(file);
+
+        AppenderComponentBuilder rollingFile
+                = builder.newAppender("rolling", "RollingFile");
+        rollingFile.addAttribute("fileName", "rolling.log");
+        rollingFile.addAttribute("filePattern", "rolling-%d{MM-dd-yy}.log.gz");
+
+        builder.add(rollingFile);
+
+        FilterComponentBuilder flow = builder.newFilter(
+                "MarkerFilter",
+                Filter.Result.ACCEPT,
+                Filter.Result.DENY);
+        flow.addAttribute("marker", "FLOW");
+
+        console.add(flow);
+        LayoutComponentBuilder standard
+                = builder.newLayout("PatternLayout");
+        standard.addAttribute("pattern", "%d [%t] %-5level: %msg%n%throwable");
+
+        console.add(standard);
+        file.add(standard);
+        rollingFile.add(standard);
+
+        RootLoggerComponentBuilder rootLogger
+                = builder.newRootLogger(Level.TRACE);
+        rootLogger.add(builder.newAppenderRef("stdout"));
+
+        builder.add(rootLogger);
+        ComponentBuilder triggeringPolicies = builder.newComponent("Policies")
+                .addComponent(builder.newComponent("CronTriggeringPolicy")
+                        .addAttribute("schedule", "0 0 0 * * ?"))
+                .addComponent(builder.newComponent("SizeBasedTriggeringPolicy")
+                        .addAttribute("size", "100M"));
+
+        rollingFile.addComponent(triggeringPolicies);
+        try {
+            builder.writeXmlConfiguration(System.out);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+    }
+}
