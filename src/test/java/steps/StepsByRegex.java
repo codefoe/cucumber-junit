@@ -10,7 +10,6 @@ import org.junit.Assert;
 import org.openqa.selenium.OutputType;
 import org.openqa.selenium.TakesScreenshot;
 import utility.Driver;
-import utility.ExtentReport;
 
 
 public class StepsByRegex {
@@ -43,9 +42,7 @@ public class StepsByRegex {
         if(scenario.isFailed()) {
             byte[] screenshot = ((TakesScreenshot) Driver.instance()).getScreenshotAs(OutputType.BYTES);
             scenario.attach(screenshot, "image/png", scenario.getName());
-            ExtentReport.fail();
         }else{
-            ExtentReport.pass();
         }
         Driver.closeDriver();
     }
